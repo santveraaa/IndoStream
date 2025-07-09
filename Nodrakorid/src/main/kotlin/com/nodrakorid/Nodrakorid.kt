@@ -12,7 +12,28 @@ import java.net.URI
 import org.jsoup.nodes.Element
 
 class Nodrakorid : MainAPI() {
-    override var mainUrl = "https://tv.nodrakor22.sbs"
+    companion object {
+        // Cache for the updated URL to avoid repeated lookups
+        private var updatedMainUrl: String? = null
+    }
+
+    // Helper function to fetch the latest URL
+    private suspend fun updateUrl() {
+        if (updatedMainUrl == null) {
+            try {
+                val doc = app.get("https://link.nodrakorid.info/").document
+                val newUrl = doc.selectFirst("a.button")?.attr("href")?.ifBlank { null }
+                if (newUrl != null && newUrl.startsWith("http")) {
+                    updatedMainUrl = newUrl
+                }
+            } catch (e: Exception) {
+                println("[$name] Failed to update URL from link.nodrakorid.info: ${e.message}")
+            }
+        }
+        updatedMainUrl?.let { mainUrl = it }
+    }
+
+    override var mainUrl = "https://nodrakor22.store"
     override var name = "Nodrakorid"
     override val supportedTypes = setOf(TvType.Movie)
 
@@ -24,7 +45,20 @@ class Nodrakorid : MainAPI() {
                     "genre/fantasy/page/%d/" to "Fantasy",
             )
 
+    override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse? {
+        updateUrl()
+        return super.getMainPage(page, request)
+    }
+
+    override suspend fun search(query: String): List<SearchResponse> {
+        updateUrl()
+        val doc = app.get("$mainUrl/?s=$query").document
+        // Assuming a selector for search results. This might need to be adjusted.
+        return doc.select("div.gmr-box-content article").mapNotNull { it.toSearchResult() }
+    }
+
     override suspend fun load(url: String): LoadResponse {
+        updateUrl()
         val response = super.load(url) ?: throw Exception("Failed to load response")
         return response.apply {
             when (this) {
@@ -101,6 +135,7 @@ class Nodrakorid : MainAPI() {
             subtitleCallback: (SubtitleFile) -> Unit,
             callback: (ExtractorLink) -> Unit
     ): Boolean {
+        updateUrl()
         return if (data.startsWith("[")) {
             tryParseJson<ArrayList<LinkData>>(data)?.filter { it.first != 360 }?.map {
                 it.second.apmap { link ->
@@ -117,6 +152,14 @@ class Nodrakorid : MainAPI() {
         } else {
             super.loadLinks(data, isCasting, subtitleCallback, callback)
         }
+    }
+
+    private fun Element.toSearchResult(): SearchResponse {
+        val title = this.selectFirst("h2.title-archive")?.text() ?: ""
+        val href = this.selectFirst("a")?.attr("href") ?: ""
+        val posterUrl = this.selectFirst("img")?.attr("src")
+
+        return newMovieSearchResponse(title, href, TvType.Movie) { this.posterUrl = posterUrl }
     }
 
     private fun fixEmbed(url: String, server: String): String {

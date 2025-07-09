@@ -11,7 +11,7 @@ buildscript {
     }
 
     dependencies {
-        classpath("com.android.tools.build:gradle:8.8.1")
+        classpath("com.android.tools.build:gradle:8.8.2")
         classpath("com.github.recloudstream:gradle:-SNAPSHOT")
         classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:2.1.10")
     }
@@ -75,7 +75,7 @@ subprojects {
         // Other dependencies
         implementation(kotlin("stdlib"))
         implementation("com.github.Blatzar:NiceHttp:0.4.11")
-        implementation("org.jsoup:jsoup:1.18.3")
+        implementation("org.jsoup:jsoup:1.18.3") // Untuk parsing HTML
         implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.16.1")
         implementation("com.fasterxml.jackson.core:jackson-databind:2.16.1")
         implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.1")
@@ -84,10 +84,9 @@ subprojects {
         implementation("com.google.code.gson:gson:2.11.0")
         implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
         implementation("app.cash.quickjs:quickjs-android:0.9.2")
-        implementation("org.jsoup:jsoup:1.18.3") // Untuk parsing HTML
         implementation("com.squareup.okhttp3:okhttp:4.12.0") // Untuk HTTP requests
-        implementation("org.json:json:20250107") // Untuk parsing JSON
-        implementation("androidx.core:core-ktx:1.15.0") // Untuk Log dan utilitas Android
+        // The org.json:json dependency conflicts with Android's built-in classes and must be removed.
+        implementation("androidx.core:core-ktx:1.16.0") // Untuk Log dan utilitas Android
         implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.1") // Untuk coroutines
 
     }
