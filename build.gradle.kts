@@ -43,7 +43,7 @@ subprojects {
         namespace = "com.tekuma25"
 
         defaultConfig {
-            minSdk = 26
+            minSdk = 21
             compileSdkVersion(35)
             targetSdk = 35
 
@@ -78,8 +78,8 @@ subprojects {
         implementation(kotlin("stdlib")) // Untuk Kotlin Standard Library
         implementation("com.github.Blatzar:NiceHttp:0.4.11") // Untuk HTTP requests
         implementation("org.jsoup:jsoup:1.18.3") // Untuk parsing HTML
-        implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.13.1") // JANGAN DIGANTI ke versi terbaru, karena ada masalah dengan versi terbaru
-        implementation("com.fasterxml.jackson.core:jackson-databind:2.16.1") // Untuk serialisasi/deserialisasi JSON
+        implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.16.0") // JANGAN DIGANTI ke versi terbaru, karena ada masalah dengan versi terbaru
+        implementation("com.fasterxml.jackson.core:jackson-databind:2.16.0") // Untuk serialisasi/deserialisasi JSON
         implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.1") // Untuk coroutines di Android
         implementation("com.faendir.rhino:rhino-android:1.6.0") // Untuk JavaScript engine
         implementation("me.xdrop:fuzzywuzzy:1.4.0") // Untuk fuzzy matching
