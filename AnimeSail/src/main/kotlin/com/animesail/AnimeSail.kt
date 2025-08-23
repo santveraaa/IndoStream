@@ -163,6 +163,7 @@ class AnimeSail : MainAPI() {
                             ?.groupValues
                             ?.getOrNull(1) // IMPORTANT: Group 1 for the number
                             ?.toIntOrNull()
+
                     newEpisode(episodeLink) { // 'episodeLink' is the 'data' argument
                         this.name = episodeName       // Set the 'name' property
                         this.episode = episodeNumber  // Set the 'episode' property (the number)
@@ -218,7 +219,7 @@ class AnimeSail : MainAPI() {
                                             else -> this.name
                                         }
                                 callback.invoke(
-                                        ExtractorLink(
+                                        newExtractorLink(
                                                 source = source,
                                                 name = source,
                                                 url = link,
@@ -227,9 +228,6 @@ class AnimeSail : MainAPI() {
                                         )
                                 )
                             }
-                    //                    skip for now
-                    //                    iframe.startsWith("$mainUrl/utils/player/fichan/") -> ""
-                    //                    iframe.startsWith("$mainUrl/utils/player/blogger/") -> ""
                     iframe.startsWith("https://aghanim.xyz/tools/redirect/") -> {
                         val link =
                                 "https://rasa-cintaku-semakin-berantai.xyz/v/${
@@ -269,7 +267,7 @@ class AnimeSail : MainAPI() {
     ) {
         loadExtractor(url, referer, subtitleCallback) { link ->
             callback.invoke(
-                    ExtractorLink(
+                    newExtractorLink(
                             link.name,
                             link.name,
                             link.url,

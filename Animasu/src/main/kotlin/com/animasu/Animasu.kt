@@ -176,7 +176,7 @@ class Animasu : MainAPI() {
     ) {
         loadExtractor(url, referer, subtitleCallback) { link ->
             callback.invoke(
-                    ExtractorLink(
+                    newExtractorLink(
                             link.name,
                             link.name,
                             link.url,
