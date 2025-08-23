@@ -33,7 +33,7 @@ class Archivd : ExtractorApi() {
                         video ?: return,
                         "$mainUrl/",
                         Qualities.Unknown.value,
-                        INFER_TYPE
+                        type = INFER_TYPE
                 )
         )
     }
@@ -87,7 +87,7 @@ class Newuservideo : ExtractorApi() {
                                 22 -> Qualities.P720.value
                                 else -> Qualities.Unknown.value
                             },
-                            INFER_TYPE
+                            type = INFER_TYPE
                     )
             )
         }

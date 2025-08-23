@@ -185,9 +185,10 @@ class Animasu : MainAPI() {
                                     link.quality
                             else getIndexQuality(quality),
                             link.type,
-                            link.headers,
-                            link.extractorData
-                    )
+                    ).apply {
+                        this.extractorData = link.extractorData
+                        this.headers = link.headers
+                    }
             )
         }
     }

@@ -220,14 +220,17 @@ class AnimeSail : MainAPI() {
                                         }
                                 callback.invoke(
                                         newExtractorLink(
-                                                source = source,
-                                                name = source,
-                                                url = link,
-                                                referer = mainUrl,
-                                                quality = quality
+                                                source,
+                                                source,
+                                                link,
+                                                mainUrl,
+                                                quality,
                                         )
                                 )
                             }
+                    //                    skip for now
+                    //                    iframe.startsWith("$mainUrl/utils/player/fichan/") -> ""
+                    //                    iframe.startsWith("$mainUrl/utils/player/blogger/") -> ""
                     iframe.startsWith("https://aghanim.xyz/tools/redirect/") -> {
                         val link =
                                 "https://rasa-cintaku-semakin-berantai.xyz/v/${
@@ -260,7 +263,7 @@ class AnimeSail : MainAPI() {
 
     private suspend fun loadFixedExtractor(
             url: String,
-            quality: Int?,
+            quality: Int,
             referer: String? = null,
             subtitleCallback: (SubtitleFile) -> Unit,
             callback: (ExtractorLink) -> Unit
@@ -273,11 +276,12 @@ class AnimeSail : MainAPI() {
                             link.url,
                             link.referer,
                             if (link.type == ExtractorLinkType.M3U8) link.quality
-                            else quality ?: Qualities.Unknown.value,
-                            link.type,
-                            link.headers,
-                            link.extractorData
-                    )
+                            else quality,
+                            link.type
+                    ).apply {
+                        this.extractorData = link.extractorData
+                        this.headers = link.headers
+                    }
             )
         }
     }
