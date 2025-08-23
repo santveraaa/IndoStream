@@ -163,20 +163,9 @@ class AnimeSail : MainAPI() {
                             ?.groupValues
                             ?.getOrNull(1) // IMPORTANT: Group 1 for the number
                             ?.toIntOrNull()
-
-                    // --- How to get runtime? This is still a question. ---
-                    // val runtimeString = episodeElement.selectFirst(".runtime-class")?.text()
-                    // val runtimeInSeconds = parseRuntime(runtimeString) // You'd need a parseRuntime function
-
                     newEpisode(episodeLink) { // 'episodeLink' is the 'data' argument
                         this.name = episodeName       // Set the 'name' property
                         this.episode = episodeNumber  // Set the 'episode' property (the number)
-                        // this.runtime = runtimeInSeconds // Uncomment and implement if you can get runtime
-                        // Set other properties if available:
-                        // this.season = ...
-                        // this.posterUrl = ...
-                        // this.description = ...
-                        // this.date = ... (parse from page if available)
                     }
                 }
                 .reversed()

@@ -109,25 +109,9 @@ class Anoboy : MainAPI() {
                 ?.groupValues
                 ?.getOrNull(1) // Group 1 for the actual number
                 ?.toIntOrNull()
-
-            // --- Placeholder for runTime extraction ---
-            // val runTimeString = episodeElement.selectFirst(".episode-duration-class")?.text() // Adjust selector based on Anoboy's HTML
-            // var runTimeInSeconds: Long? = null
-            // if (runTimeString != null) {
-            //     runTimeInSeconds = parseMyDurationFormat(runTimeString) // You'll need a helper function
-            // }
-            // --- End placeholder ---
-
-            // Replace the old constructor call (that was on/around line 106) with this:
             newEpisode(link) { // 'link' is the 'data' argument
                 this.name = episodeNameText       // Set the 'name' property (full title)
                 this.episode = episodeNumber      // Set the 'episode' property (the number)
-                // this.runtime = runTimeInSeconds // Set the 'runtime' property if you can get it
-                // Add other properties if available and needed:
-                // this.season = ...
-                // this.posterUrl = ... (if available per episode)
-                // this.description = ... (if available per episode)
-                // this.date = ... (if upload date is available per episode)
             }
         }.reversed()
         return newAnimeLoadResponse(title, url, getType(type)) {

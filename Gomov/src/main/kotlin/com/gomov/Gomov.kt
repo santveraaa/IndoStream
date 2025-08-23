@@ -130,7 +130,6 @@ open class Gomov : MainAPI() {
                                 ?.filter { it.isDigit() }
                                 ?.toIntOrNull()
 
-                        // If episodeNumber is null, we might not want this episode
                         if (episodeNumber == null) return@mapNotNull null
 
                         val seasonNumber = // Renamed from 'season'
@@ -138,28 +137,12 @@ open class Gomov : MainAPI() {
                                 .firstOrNull()
                                 ?.filter { it.isDigit() }
                                 ?.toIntOrNull()
-
-                        // --- Placeholder for runTime extraction ---
-                        // val runTimeString = epsElement.selectFirst(".ep-duration")?.text() // Adjust selector
-                        // var runTimeInSeconds: Long? = null
-                        // if (runTimeString != null) {
-                        //     runTimeInSeconds = parseGomovDuration(runTimeString) // Implement this
-                        // }
-                        // --- End placeholder ---
-
-                        // Replace the old constructor call (that was on line 136) with this:
                         newEpisode(href) { // 'href' is the 'data' argument
                             this.name = name                 // Set the 'name' property (full title)
                             this.episode = episodeNumber     // Set the 'episode' property (parsed number)
                             this.season = if (name.contains(" ")) seasonNumber else null // Set season
-                            // this.runtime = runTimeInSeconds  // Set the 'runtime' property if you can get it
-                            // Add other properties if available and needed:
-                            // this.posterUrl = ...
-                            // this.description = ...
-                            // this.date = ...
                         }
                     }
-                    // .filter { it.episode != null } // No longer needed if mapNotNull handles it based on episodeNumber
                             .filter { it.episode != null }
             newTvSeriesLoadResponse(title, url, TvType.TvSeries, episodes) {
                 this.posterUrl = poster

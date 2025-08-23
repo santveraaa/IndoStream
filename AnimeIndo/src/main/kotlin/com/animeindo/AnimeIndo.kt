@@ -159,17 +159,10 @@ class AnimeIndo : MainAPI() {
                     val link = fixUrl(headerAnchor.attr("href"))
                     val episodeNumber = episodeTitleText.replace("Episode", "", ignoreCase = true).trim().toIntOrNull()
                     val runTimeString = element.selectFirst("span.duration")?.text()
-                    val runTimeInSeconds = runTimeString?.let { rt ->
-                        rt.filter { it.isDigit() }.toLongOrNull()?.times(60)
-                    }
-                    // Assuming newEpisode has a signature like:
-                    // fun newEpisode(data: String, name: String?, episode: Int?, ..., runtime: Long?): Episode
                     newEpisode(link) {
                         this.data = link
                         this.name = episodeTitleText
                         this.episode = episodeNumber
-                        //this.runtime = runTimeInSeconds
-                        // other parameters...
                     }
                 }
                 .reversed()

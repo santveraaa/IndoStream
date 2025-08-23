@@ -101,45 +101,12 @@ class DramaSerial : MainAPI() {
 
                     if (episodePageLink == null) return@mapNotNull null // Skip if link is null
 
-                    // --- Name for the episode ---
                     val episodeName = "Episode $episodeNumber" // Default name, improve if possible
-
-                    // --- Placeholder for runTime extraction ---
-                    // Option 1: If runtime is on the current page (unlikely for page-links)
-                    // val runTimeString = epsElement.closest("selector-for-episode-item")?.selectFirst(".duration")?.text()
-                    // Option 2: If runtime is on the episodePageLink (requires another request)
-                    // var runTimeInSeconds: Long? = null
-                    // if (fetchRuntimeForEachEpisode) { // A flag you might set
-                    //     try {
-                    //         val episodePageDoc = app.get(episodePageLink).document
-                    //         runTimeInSeconds = parseDurationFromEpisodePage(episodePageDoc) // Implement this
-                    //     } catch (e: Exception) {
-                    //         // Handle error fetching episode page
-                    //     }
-                    // }
-                    // --- End placeholder ---
-
-                    // Replace the old constructor call (that was on line 100) with this:
                     newEpisode(episodePageLink) { // 'episodePageLink' is the 'data' argument
                         this.name = episodeName          // Set the 'name' property
                         this.episode = episodeNumber     // Set the 'episode' property (the number)
-                        // this.runtime = runTimeInSeconds // Set the 'runtime' property if you can get it
-                        // Add other properties if available and needed:
-                        // this.season = ...
-                        // this.posterUrl = ...
-                        // this.description = ...
-                        // this.date = ...
                     }
                 }
-
-            return newTvSeriesLoadResponse(title, url, TvType.AsianDrama, episodes = episodes) {
-                posterUrl = poster
-                this.year = year
-                this.duration = duration
-                plot = description
-                this.tags = tags
-            }
-        }
     }
 
     private suspend fun invokeGetbk(

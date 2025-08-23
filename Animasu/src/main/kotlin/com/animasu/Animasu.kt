@@ -110,9 +110,9 @@ class Animasu : MainAPI() {
         val trailer = document.selectFirst("div.trailer iframe")?.attr("src")
         val episodes =
             document.select("ul#daftarepisode > li")
-                .map {
+                .mapNotNull {
                     val link = fixUrl(it.selectFirst("a")!!.attr("href"))
-                    val episodeName = it.selectFirst("a")?.text() ?: "" // Use a more descriptive variable name
+                    val episodeName = it.selectFirst("a")?.text() ?: return@mapNotNull null
                     val episodeNumber =
                         Regex("Episode\\s?(\\d+)")
                             .find(episodeName)

@@ -94,32 +94,14 @@ open class Dramaid : MainAPI() {
             val link = fixUrl(anchor.attr("href"))
             val episodeTitle = episodeElement.selectFirst("a > .epl-title")?.text() ?: anchor.text() // Full title
 
-            // Attempt to parse episode number from the title
-            // You might need a more robust regex depending on the title format
             val episodeNumber = Regex("""(?:Episode|Eps)\s*(\d+)""", RegexOption.IGNORE_CASE)
                 .find(episodeTitle)
                 ?.groupValues
                 ?.getOrNull(1)
                 ?.toIntOrNull()
-
-            // --- Placeholder for runTime extraction ---
-            // val runTimeString = episodeElement.selectFirst(".episode-duration-class")?.text() // Adjust selector based on Dramaid's HTML
-            // var runTimeInSeconds: Long? = null
-            // if (runTimeString != null) {
-            //     runTimeInSeconds = parseMyDurationFormat(runTimeString) // You'll need a helper function
-            // }
-            // --- End placeholder ---
-
-            // Replace the old constructor call (that was on line 95) with this:
             newEpisode(link) { // 'link' is the 'data' argument
                 this.name = episodeTitle          // Set the 'name' property (full title)
                 this.episode = episodeNumber      // Set the 'episode' property (the parsed number)
-                // this.runtime = runTimeInSeconds // Set the 'runtime' property if you can get it
-                // Add other properties if available and needed:
-                // this.season = ... (if applicable for dramas)
-                // this.posterUrl = ... (if available per episode)
-                // this.description = ... (if available per episode)
-                // this.date = ... (if upload date is available per episode)
             }
         }.reversed()
 
