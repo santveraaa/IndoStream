@@ -219,12 +219,12 @@ class AnimeSail : MainAPI() {
                                             else -> this.name
                                         }
                                 callback.invoke(
-                                        newExtractorLink(
-                                                source,
-                                                source,
-                                                link,
-                                                mainUrl,
-                                                quality,
+                                        ExtractorLink(
+                                            source,
+                                            source,
+                                            link,
+                                            mainUrl,
+                                            quality,
                                         )
                                 )
                             }
@@ -270,7 +270,7 @@ class AnimeSail : MainAPI() {
     ) {
         loadExtractor(url, referer, subtitleCallback) { link ->
             callback.invoke(
-                    newExtractorLink(
+                    ExtractorLink(
                             link.name,
                             link.name,
                             link.url,

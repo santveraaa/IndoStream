@@ -107,117 +107,121 @@ class DramaSerial : MainAPI() {
                         this.episode = episodeNumber     // Set the 'episode' property (the number)
                     }
                 }
-    }
+        }
 
-    private suspend fun invokeGetbk(
-        name: String,
-        url: String,
-        callback: (ExtractorLink) -> Unit
-    ) {
-        val script = app.get(
-            url,
-            referer = "$serverUrl/"
-        ).document.selectFirst("script:containsData(sources)")?.data() ?: return
+        private suspend fun invokeGetbk(
+            name: String,
+            url: String,
+            callback: (ExtractorLink) -> Unit
+        ) {
+            val script = app.get(
+                url,
+                referer = "$serverUrl/"
+            ).document.selectFirst("script:containsData(sources)")?.data() ?: return
 
-        val json = "sources:\\s*\\[(.*)]".toRegex().find(script)?.groupValues?.get(1)
-        AppUtils.tryParseJson<ArrayList<Sources>>("[$json]")?.map {
+            val json = "sources:\\s*\\[(.*)]".toRegex().find(script)?.groupValues?.get(1)
+            AppUtils.tryParseJson<ArrayList<Sources>>("[$json]")?.map {
+                callback.invoke(
+                    ExtractorLink(
+                        name,
+                        name,
+                        it.file ?: return@map,
+                        "$serverUrl/",
+                        getQualityFromName(it.label),
+                        INFER_TYPE,
+                    )
+                )
+            }
+
+        }
+
+        private suspend fun invokeGdrive(
+            name: String,
+            url: String,
+            callback: (ExtractorLink) -> Unit
+        ) {
+
+            val embedUrl = app.get(
+                url,
+                referer = "$serverUrl/"
+            ).document.selectFirst("iframe")?.attr("src")?.let { fixUrl(it) } ?: return
+
+            val req = app.get(embedUrl)
+            val host = getBaseUrl(embedUrl)
+            val token = req.document.selectFirst("div#token")?.text() ?: return
+
             callback.invoke(
                 ExtractorLink(
                     name,
                     name,
-                    it.file ?: return@map,
-                    "$serverUrl/",
-                    getQualityFromName(it.label),
-                    INFER_TYPE,
+                    "$host/hlsplaylist.php?idhls=${token.trim()}.m3u8",
+                    "$host/",
+                    Qualities.Unknown.value,
+                    true
                 )
             )
+
         }
 
-    }
+        override suspend fun loadLinks(
+            data: String,
+            isCasting: Boolean,
+            subtitleCallback: (SubtitleFile) -> Unit,
+            callback: (ExtractorLink) -> Unit
+        ): Boolean {
+            val document = app.get(data).document
 
-    private suspend fun invokeGdrive(
-        name: String,
-        url: String,
-        callback: (ExtractorLink) -> Unit
-    ) {
+            val iframe = document.select("iframe[name=juraganfilm]").attr("src")
+            app.get(iframe, referer = "$mainUrl/").document.select("div#header-slider ul li")
+                .apmap { mLink ->
+                    val iLink =
+                        mLink.attr("onclick").substringAfter("frame('").substringBefore("')")
+                    serverUrl = getBaseUrl(iLink)
+                    val iMovie = iLink.substringAfter("movie=").substringBefore("&")
+                    val mIframe = iLink.substringAfter("iframe=")
+                    val serverName = fixTitle(mIframe)
+                    when (mIframe) {
+                        "getbk" -> {
+                            invokeGetbk(
+                                serverName,
+                                "$serverUrl/stream/$mIframe.php?movie=$iMovie",
+                                callback
+                            )
+                        }
 
-        val embedUrl = app.get(
-            url,
-            referer = "$serverUrl/"
-        ).document.selectFirst("iframe")?.attr("src")?.let { fixUrl(it) } ?: return
+                        "gdrivehls", "gdriveplayer" -> {
+                            invokeGdrive(serverName, iLink, callback)
+                        }
 
-        val req = app.get(embedUrl)
-        val host = getBaseUrl(embedUrl)
-        val token = req.document.selectFirst("div#token")?.text() ?: return
+                        else -> {}
+                    }
+                }
 
-        callback.invoke(
-            ExtractorLink(
-                name,
-                name,
-                "$host/hlsplaylist.php?idhls=${token.trim()}.m3u8",
-                "$host/",
-                Qualities.Unknown.value,
-                true
-            )
+            return true
+
+        }
+
+        private fun getBaseUrl(url: String): String {
+            return URI(url).let {
+                "${it.scheme}://${it.host}"
+            }
+        }
+
+        private data class Sources(
+            @JsonProperty("file") val file: String? = null,
+            @JsonProperty("label") val label: String? = null,
         )
 
-    }
-
-    override suspend fun loadLinks(
-        data: String,
-        isCasting: Boolean,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit
-    ): Boolean {
-        val document = app.get(data).document
-
-        val iframe = document.select("iframe[name=juraganfilm]").attr("src")
-        app.get(iframe, referer = "$mainUrl/").document.select("div#header-slider ul li")
-            .apmap { mLink ->
-                val iLink = mLink.attr("onclick").substringAfter("frame('").substringBefore("')")
-                serverUrl = getBaseUrl(iLink)
-                val iMovie = iLink.substringAfter("movie=").substringBefore("&")
-                val mIframe = iLink.substringAfter("iframe=")
-                val serverName = fixTitle(mIframe)
-                when (mIframe) {
-                    "getbk" -> {
-                        invokeGetbk(
-                            serverName,
-                            "$serverUrl/stream/$mIframe.php?movie=$iMovie",
-                            callback
-                        )
-                    }
-                    "gdrivehls", "gdriveplayer" -> {
-                        invokeGdrive(serverName, iLink, callback)
-                    }
-                    else -> {}
-                }
-            }
-
-        return true
 
     }
 
-    private fun getBaseUrl(url: String): String {
-        return URI(url).let {
-            "${it.scheme}://${it.host}"
-        }
+    class Bk21 : Filesim() {
+        override val name = "Bk21"
+        override var mainUrl = "https://bk21.net"
     }
 
-    private data class Sources(
-        @JsonProperty("file") val file: String? = null,
-        @JsonProperty("label") val label: String? = null,
-    )
-
-
-}
-
-class Bk21 : Filesim() {
-    override val name = "Bk21"
-    override var mainUrl = "https://bk21.net"
-}
-
-class Lkc21 : Filesim() {
-    override val name = "Lkc21"
-    override var mainUrl = "https://lkc21.net"
+    class Lkc21 : Filesim() {
+        override val name = "Lkc21"
+        override var mainUrl = "https://lkc21.net"
+    }
 }
