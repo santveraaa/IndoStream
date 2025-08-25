@@ -11,7 +11,7 @@ import org.jsoup.Jsoup
 import org.jsoup.nodes.Element
 import java.util.Base64
 
-class Dramaid : MainAPI() {
+open class Dramaid : MainAPI() {
     override var mainUrl = "https://dramaid.nl"
     override var name = "DramaId"
     override val hasMainPage = true
