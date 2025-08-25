@@ -127,6 +127,8 @@ open class Dramaid : MainAPI() {
         @JsonProperty("default") val default: Boolean?
     )
 
+    // ... (bagian atas tetap sama)
+
     private suspend fun invokeDriveSource(
         url: String,
         subCallback: (SubtitleFile) -> Unit,
@@ -145,10 +147,10 @@ open class Dramaid : MainAPI() {
         if (source.isNotBlank()) {
             tryParseJson<List<Sources>>("[$source]")?.forEach { s ->
                 sourceCallback.invoke(
-                    ExtractorLink(
-                        source = "Drive",
-                        name = name,
-                        url = fixUrl(s.file),
+                    newExtractorLink(
+                        this.name,
+                        "Drive",
+                        fixUrl(s.file),
                         referer = "$mainUrl/",
                         quality = getQualityFromName(s.label),
                         isM3u8 = s.type.equals("hls", true)
@@ -165,6 +167,7 @@ open class Dramaid : MainAPI() {
             }
         }
     }
+
 
     override suspend fun loadLinks(
         data: String,
