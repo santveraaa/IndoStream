@@ -148,16 +148,19 @@ open class Dramaid : MainAPI() {
                 // Positional args to avoid named-arg mismatch across v4 variants
                 val q = getQualityFromName(s.label)
                 val isHls = s.type.equals("hls", true)
-                sourceCallback.invoke(
-                    newExtractorLink(
-                        this.name,
-                        "Drive",
-                        fixUrl(s.file),
-                        "https://motonews.club/",
-                        q,
-                        isHls
-                    )
-                )
+               sourceCallback.invoke(
+					newExtractorLink(
+						source = "Drive",
+						name = this.name,
+						url = fixUrl(sourceItem.file),
+						type = ExtractorLinkType.VIDEO // atau HLS/DASH sesuai kebutuhan
+					) {
+						this.referer = "https://motonews.club/"
+						this.quality = getQualityFromName(sourceItem.label)
+						this.isM3u8 = sourceItem.type.equals("hls", true)
+					}
+				)
+
             }
         }
 
@@ -197,7 +200,11 @@ open class Dramaid : MainAPI() {
             val processed = src.replace("https://ndrama.xyz", "https://www.fembed.com")
             if (processed.contains("motonews")) {
                 // perbaiki: tidak mengirim this.name (fungsi tidak butuh)
-                invokeDriveSource(processed, subtitleCallback, callback)
+               invokeDriveSource(
+					it,
+					subtitleCallback,
+					callback
+				)
             } else {
                 // referer aman default ke mainUrl
                 loadExtractor(processed, "$mainUrl/", subtitleCallback, callback)
