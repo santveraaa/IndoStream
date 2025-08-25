@@ -1,5 +1,6 @@
 package com.dramaid
 
+import com.lagradost.cloudstream3.utils.newExtractorLink
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.AppUtils.tryParseJson
@@ -141,43 +142,49 @@ open class Dramaid : MainAPI() {
     )
 
     private suspend fun invokeDriveSource(
-        url: String,
-        name: String,
-        subCallback: (SubtitleFile) -> Unit,
-        sourceCallback: (ExtractorLink) -> Unit
-    ) {
-        val server = app.get(url).document.selectFirst(".picasa")?.nextElementSibling()?.data()
+    url: String,
+    subCallback: (SubtitleFile) -> Unit,
+    sourceCallback: (ExtractorLink) -> Unit
+) {
+    val server = app.get(url).document.selectFirst(".picasa")?.nextElementSibling()?.data()
+        ?: return
 
-        val source = "[${server!!.substringAfter("sources: [").substringBefore("],")}]".trimIndent()
-        val trackers = server.substringAfter("tracks:[").substringBefore("],")
-            .replace("//language", "")
-            .replace("file", "\"file\"")
-            .replace("label", "\"label\"")
-            .replace("kind", "\"kind\"").trimIndent()
+    val source = server.substringAfter("sources: [", missingDelimiterValue = "").substringBefore("],")
+    val trackers = server.substringAfter("tracks:[", missingDelimiterValue = "").substringBefore("],")
+        .replace("//language", "")
+        .replace("file", "\"file\"")
+        .replace("label", "\"label\"")
+        .replace("kind", "\"kind\"")
 
-        tryParseJson<List<Sources>>(source)?.map {
-            sourceCallback(
-                ExtractorLink(
-                    name,
-                    "Drive",
-                    fixUrl(it.file),
+    if (source.isNotBlank()) {
+        val sourceJson = "[$source]"
+        tryParseJson<List<Sources>>(sourceJson)?.forEach { sourceItem ->
+            // GUNAKAN newExtractorLink BUKAN CONSTRUCTOR LAMA
+            sourceCallback.invoke(
+                newExtractorLink(
+                    name = this.name,
+                    source = "Drive", 
+                    url = fixUrl(sourceItem.file),
                     referer = "https://motonews.club/",
-                    quality = getQualityFromName(it.label)
+                    quality = getQualityFromName(sourceItem.label),
+                    isM3u8 = sourceItem.type.equals("hls", true)
                 )
             )
         }
-
-        tryParseJson<Tracks>(trackers)?.let {
-            subCallback.invoke(
-                SubtitleFile(
-                    if (it.label.contains("Indonesia")) "${it.label}n" else it.label,
-                    it.file
-                )
-            )
-        }
-
     }
 
+    if (trackers.isNotBlank()) {
+        val trackersJson = "[$trackers]"
+        tryParseJson<List<Tracks>>(trackersJson)?.forEach { track ->
+            subCallback.invoke(
+                SubtitleFile(
+                    if (track.label.contains("Indonesia")) track.label else track.label,
+                    track.file
+                )
+            )
+        }
+    }
+}
     override suspend fun loadLinks(
         data: String,
         isCasting: Boolean,
