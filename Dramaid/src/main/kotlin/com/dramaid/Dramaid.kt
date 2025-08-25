@@ -6,7 +6,6 @@ import com.lagradost.cloudstream3.utils.AppUtils.tryParseJson
 import com.lagradost.cloudstream3.utils.ExtractorLink
 import com.lagradost.cloudstream3.utils.getQualityFromName
 import com.lagradost.cloudstream3.utils.loadExtractor
-import com.lagradost.cloudstream3.utils.newExtractorLink
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Element
 import java.util.Base64
@@ -146,15 +145,14 @@ open class Dramaid : MainAPI() {
         if (source.isNotBlank()) {
             tryParseJson<List<Sources>>("[$source]")?.forEach { s ->
                 sourceCallback.invoke(
-                    newExtractorLink(
+                    ExtractorLink(
                         source = "Drive",
                         name = name,
-                        url = fixUrl(s.file)
-                    ) {
-                        referer = "https://motonews.club/"
-                        quality = getQualityFromName(s.label)
+                        url = fixUrl(s.file),
+                        referer = "$mainUrl/",
+                        quality = getQualityFromName(s.label),
                         isM3u8 = s.type.equals("hls", true)
-                    }
+                    )
                 )
             }
         }
