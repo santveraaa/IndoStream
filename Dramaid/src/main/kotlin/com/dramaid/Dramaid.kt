@@ -1,55 +1,57 @@
 package com.dramaid
 
 import com.lagradost.cloudstream3.*
+import com.lagradost.cloudstream3.LoadResponse.Companion.addEpisodes
 import com.lagradost.cloudstream3.utils.*
 import org.jsoup.Jsoup
 
-class Dramaid : MainAPI() {
-    override var mainUrl = "https://dramaid.icu"
+open class Dramaid : MainAPI() {
+    override var mainUrl = "https://www.dramaid.site"
     override var name = "Dramaid"
-    override val supportedTypes = setOf(TvType.AsianDrama)
     override val hasMainPage = true
+    override var lang = "id"
+    override val supportedTypes = setOf(TvType.AsianDrama, TvType.Movie, TvType.TvSeries)
 
     override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse {
-        val document = app.get(mainUrl).document
-        val items = document.select("div.post-item").mapNotNull {
-            val title = it.selectFirst("h2.post-title a")?.text() ?: return@mapNotNull null
-            val href = it.selectFirst("h2.post-title a")?.attr("href") ?: return@mapNotNull null
+        val doc = app.get(mainUrl).document
+        val items = doc.select("div.item").mapNotNull {
+            val title = it.selectFirst("h2")?.text() ?: return@mapNotNull null
+            val link = fixUrl(it.selectFirst("a")?.attr("href") ?: return@mapNotNull null)
             val poster = it.selectFirst("img")?.attr("src")
-            newHomePageList(
-                title = title,
-                link = href,
+            HomePageListItem(
+                name = title,
+                url = link,
                 posterUrl = poster
             )
         }
         return newHomePageResponse(
-            list = listOf(
-                HomePageList("Terbaru", items)
-            )
+            listOf(HomePageList("Terbaru", items))
         )
     }
 
-    override suspend fun load(url: String): LoadResponse {
+    override suspend fun load(url: String): LoadResponse? {
         val doc = app.get(url).document
-        val title = doc.selectFirst("h1.entry-title")?.text() ?: name
-        val poster = doc.selectFirst("div.thumb img")?.attr("src")
-        val description = doc.selectFirst("div.entry-content p")?.text()
+        val title = doc.selectFirst("h1")?.text() ?: return null
+        val poster = doc.selectFirst(".poster img")?.attr("src")
+        val description = doc.selectFirst(".desc")?.text()
+        val episodes = doc.select("ul.episode-list li a").map {
+            newEpisode(
+                name = it.text(),
+                data = fixUrl(it.attr("href"))
+            )
+        }
 
-        return newTvSeriesLoadResponse(
+        return TvSeriesLoadResponse(
             name = title,
             url = url,
+            apiName = this.name,
             type = TvType.AsianDrama,
             posterUrl = poster,
+            year = null,
+            rating = null,
             plot = description
-        ) {
-            addEpisodes(DubStatus.Subbed, listOf(
-                Episode(
-                    data = url,
-                    name = "Episode 1",
-                    season = 1,
-                    episode = 1
-                )
-            ))
+        ).apply {
+            addEpisodes(DubStatus.Subbed, episodes)
         }
     }
 
@@ -60,26 +62,16 @@ class Dramaid : MainAPI() {
         callback: (ExtractorLink) -> Unit
     ): Boolean {
         val doc = app.get(data).document
-        val playerUrl = doc.selectFirst("iframe")?.attr("src") ?: return false
-
-        // Contoh: ambil link HLS / MP4 dari iframe
-        val m3u8Url = extractHlsUrl(playerUrl) ?: return false
-
-        newExtractorLink(
-            source = name,
-            name = "Dramaid Server",
-            url = m3u8Url
-        ) {
-            // Jika perlu referer, tambahkan di sini
-            referer = mainUrl
-            isM3u8 = true
-        }.also { callback(it) }
-
+        val iframe = doc.selectFirst("iframe")?.attr("src") ?: return false
+        callback.invoke(
+            newExtractorLink(
+                this.name,
+                this.name,
+                iframe,
+                referer = mainUrl,
+                quality = Qualities.Unknown
+            )
+        )
         return true
-    }
-
-    private suspend fun extractHlsUrl(iframeUrl: String): String? {
-        val iframeDoc = app.get(iframeUrl).document
-        return iframeDoc.selectFirst("source")?.attr("src")
     }
 }
