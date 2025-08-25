@@ -11,7 +11,7 @@ import org.jsoup.Jsoup
 import org.jsoup.nodes.Element
 import java.util.Base64
 
-open class Dramaid : MainAPI() {
+class Dramaid : MainAPI() {
     override var mainUrl = "https://dramaid.nl"
     override var name = "DramaId"
     override val hasMainPage = true
@@ -19,7 +19,7 @@ open class Dramaid : MainAPI() {
     override val supportedTypes = setOf(TvType.AsianDrama)
 
     companion object {
-        fun getStatus(t: String): ShowStatus {
+        private fun getStatus(t: String): ShowStatus {
             return when (t) {
                 "Completed" -> ShowStatus.Completed
                 "Ongoing" -> ShowStatus.Ongoing
@@ -27,7 +27,7 @@ open class Dramaid : MainAPI() {
             }
         }
 
-        fun getType(t: String?): TvType {
+        private fun getType(t: String?): TvType {
             return when {
                 t?.contains("Movie", true) == true -> TvType.Movie
                 t?.contains("Anime", true) == true -> TvType.Anime
@@ -50,7 +50,8 @@ open class Dramaid : MainAPI() {
 
     private fun getProperDramaLink(uri: String): String {
         return if (uri.contains("-episode-")) {
-            "$mainUrl/series/" + Regex("$mainUrl/(.+)-ep.+").find(uri)?.groupValues?.get(1)
+            Regex("$mainUrl/(.+)-ep.+").find(uri)?.groupValues?.getOrNull(1)
+                ?.let { "$mainUrl/series/$it" } ?: uri
         } else uri
     }
 
@@ -72,13 +73,13 @@ open class Dramaid : MainAPI() {
     override suspend fun load(url: String): LoadResponse {
         val document = app.get(url).document
 
-        val title = document.selectFirst("h1.entry-title")?.text()?.trim() ?: ""
+        val title = document.selectFirst("h1.entry-title")?.text()?.trim().orEmpty()
         val poster = fixUrlNull(document.select("div.thumb img:last-child").attr("src"))
         val tags = document.select(".genxed > a").map { it.text() }
         val type = document.selectFirst(".info-content .spe span:contains(Tipe:)")?.ownText()
-        val year = Regex("\\d, ([0-9]*)").find(
-            document.selectFirst(".info-content > .spe > span > time")?.text()?.trim() ?: ""
-        )?.groupValues?.getOrNull(1)?.toIntOrNull()
+        val year = Regex("\\d{4}").find(
+            document.selectFirst(".info-content > .spe > span > time")?.text()?.trim().orEmpty()
+        )?.groupValues?.firstOrNull()?.toIntOrNull()
         val status = getStatus(
             document.select(".info-content > .spe > span:nth-child(1)")
                 .text().trim().replace("Status: ", "")
@@ -143,36 +144,25 @@ open class Dramaid : MainAPI() {
             .replace("kind", "\"kind\"")
 
         if (source.isNotBlank()) {
-            val sourceJson = "[$source]"
-            tryParseJson<List<Sources>>(sourceJson)?.forEach { s ->
-                // Positional args to avoid named-arg mismatch across v4 variants
-                val q = getQualityFromName(s.label)
-                val isHls = s.type.equals("hls", true)
-               sourceCallback.invoke(
-					newExtractorLink(
-						source = "Drive",
-						name = this.name,
-						url = fixUrl(sourceItem.file),
-						type = ExtractorLinkType.VIDEO // atau HLS/DASH sesuai kebutuhan
-					) {
-						this.referer = "https://motonews.club/"
-						this.quality = getQualityFromName(sourceItem.label)
-						this.isM3u8 = sourceItem.type.equals("hls", true)
-					}
-				)
-
+            tryParseJson<List<Sources>>("[$source]")?.forEach { s ->
+                sourceCallback.invoke(
+                    newExtractorLink(
+                        source = "Drive",
+                        name = name,
+                        url = fixUrl(s.file)
+                    ) {
+                        referer = "https://motonews.club/"
+                        quality = getQualityFromName(s.label)
+                        isM3u8 = s.type.equals("hls", true)
+                    }
+                )
             }
         }
 
         if (trackers.isNotBlank()) {
-            val trackersJson = "[$trackers]"
-            tryParseJson<List<Tracks>>(trackersJson)?.forEach { t ->
+            tryParseJson<List<Tracks>>("[$trackers]")?.forEach { t ->
                 subCallback.invoke(
-                    SubtitleFile(
-                        // label tetap apa adanya
-                        t.label,
-                        t.file
-                    )
+                    SubtitleFile(t.label, t.file)
                 )
             }
         }
@@ -186,7 +176,6 @@ open class Dramaid : MainAPI() {
     ): Boolean {
         val document = app.get(data).document
 
-        // decode value (base64) -> ambil iframe src -> fixUrl
         val sources = document.select(".mobius > .mirror > option").mapNotNull { opt ->
             val raw = opt.attr("value")
             val decoded = runCatching {
@@ -199,14 +188,8 @@ open class Dramaid : MainAPI() {
         for (src in sources) {
             val processed = src.replace("https://ndrama.xyz", "https://www.fembed.com")
             if (processed.contains("motonews")) {
-                // perbaiki: tidak mengirim this.name (fungsi tidak butuh)
-               invokeDriveSource(
-					it,
-					subtitleCallback,
-					callback
-				)
+                invokeDriveSource(processed, subtitleCallback, callback)
             } else {
-                // referer aman default ke mainUrl
                 loadExtractor(processed, "$mainUrl/", subtitleCallback, callback)
             }
         }
